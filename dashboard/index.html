@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laptop Time Monitor Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+        
+        .user-selector {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            margin-bottom: 20px;
+            background: white;
+        }
+        
+        .user-selector:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .usage-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .usage-item:last-child {
+            border-bottom: none;
+        }
+        
+        .app-name {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .time-blocks {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+        
+        .activity-item {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.95em;
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-user {
+            font-weight: 600;
+            color: #667eea;
+        }
+        
+        .activity-app {
+            color: #333;
+        }
+        
+        .activity-time {
+            color: #999;
+            font-size: 0.85em;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+        
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+        }
+        
+        .stat-box {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            flex: 1;
+            margin: 0 10px;
+        }
+        
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 15px;
+            width: 100%;
+        }
+        
+        .refresh-btn:hover {
+            background: #5568d3;
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-row {
+                flex-direction: column;
+            }
+            
+            .stat-box {
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Laptop Time Monitor</h1>
+            <p>Track and understand laptop usage patterns</p>
+        </header>
+        
+        <div class="dashboard-grid">
+            <!-- User Selection & Stats -->
+            <div class="card">
+                <h2>👤 Select User</h2>
+                <select id="userSelect" class="user-selector" onchange="loadUserData()">
+                    <option value="">Loading users...</option>
+                </select>
+                
+                <div class="stats-row">
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalApps">0</div>
+                        <div class="stat-label">Apps Used</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalTime">0</div>
+                        <div class="stat-label">Time Blocks</div>
+                    </div>
+                </div>
+                
+                <button class="refresh-btn" onclick="loadUsers()">🔄 Refresh Users</button>
+            </div>
+            
+            <!-- Usage by Application -->
+            <div class="card">
+                <h2>📱 Top Applications</h2>
+                <div id="usageList">
+                    <div class="no-data">Select a user to view usage</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="card">
+            <h2>⏰ Recent Activity</h2>
+            <div id="activityList">
+                <div class="no-data">Loading recent activity...</div>
+            </div>
+            <button class="refresh-btn" onclick="loadActivity()">🔄 Refresh Activity</button>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '';
+        
+        // Load users on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            loadActivity();
+        });
+        
+        async function loadUsers() {
+            try {
+                const response = await fetch(`${API_BASE}/api/users`);
+                const data = await response.json();
+                
+                const select = document.getElementById('userSelect');
+                select.innerHTML = '<option value="">-- Select a User --</option>';
+                
+                if (data.users && data.users.length > 0) {
+                    data.users.forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user;
+                        option.textContent = user;
+                        select.appendChild(option);
+                    });
+                } else {
+                    const option = document.createElement('option');
+                    option.textContent = 'No users found';
+                    option.disabled = true;
+                    select.appendChild(option);
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                document.getElementById('userSelect').innerHTML = 
+                    '<option value="">Error loading users</option>';
+            }
+        }
+        
+        async function loadUserData() {
+            const userId = document.getElementById('userSelect').value;
+            
+            if (!userId) {
+                document.getElementById('usageList').innerHTML = 
+                    '<div class="no-data">Select a user to view usage</div>';
+                document.getElementById('totalApps').textContent = '0';
+                document.getElementById('totalTime').textContent = '0';
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/usage/${userId}?days=7`);
+                const data = await response.json();
+                
+                const usageList = document.getElementById('usageList');
+                
+                if (data.usage && data.usage.length > 0) {
+                    let html = '';
+                    data.usage.forEach(item => {
+                        html += `
+                            <div class="usage-item">
+                                <span class="app-name">${escapeHtml(item.application)}</span>
+                                <span class="time-blocks">${item.time_blocks} blocks</span>
+                            </div>
+                        `;
+                    });
+                    usageList.innerHTML = html;
+                    
+                    // Update stats
+                    document.getElementById('totalApps').textContent = data.usage.length;
+                    const totalTime = data.usage.reduce((sum, item) => sum + item.time_blocks, 0);
+                    document.getElementById('totalTime').textContent = totalTime;
+                } else {
+                    usageList.innerHTML = '<div class="no-data">No usage data found for this user</div>';
+                    document.getElementById('totalApps').textContent = '0';
+                    document.getElementById('totalTime').textContent = '0';
+                }
+            } catch (error) {
+                console.error('Error loading usage data:', error);
+                document.getElementById('usageList').innerHTML = 
+                    '<div class="no-data">Error loading usage data</div>';
+            }
+        }
+        
+        async function loadActivity() {
+            try {
+                const response = await fetch(`${API_BASE}/api/activity?limit=20`);
+                const data = await response.json();
+                
+                const activityList = document.getElementById('activityList');
+                
+                if (data.activity && data.activity.length > 0) {
+                    let html = '';
+                    data.activity.forEach(item => {
+                        const time = new Date(item.timestamp).toLocaleString();
+                        html += `
+                            <div class="activity-item">
+                                <span class="activity-user">${escapeHtml(item.user_id)}</span>
+                                used 
+                                <span class="activity-app">${escapeHtml(item.application)}</span>
+                                <div class="activity-time">${time}</div>
+                            </div>
+                        `;
+                    });
+                    activityList.innerHTML = html;
+                } else {
+                    activityList.innerHTML = '<div class="no-data">No recent activity</div>';
+                }
+            } catch (error) {
+                console.error('Error loading activity:', error);
+                document.getElementById('activityList').innerHTML = 
+                    '<div class="no-data">Error loading recent activity</div>';
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
